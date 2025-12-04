@@ -1,0 +1,16 @@
+.program i2s_tx
+
+; Estado: siempre cargamos un número de 32 bits (dos canales de 16 bits)
+; Se envía MSB primero por DIN (side-set), y se sincroniza con BCLK.
+
+.side_set 1 opt
+
+; Shift-left para enviar MSB->LSB
+pull        side 0        ; esperar palabra desde FIFO
+mov x, osr               ; mover palabra completa a X (contador de bits)
+mov y, isr               ; no usado, pero evita warnings
+
+bitloop:
+    out pins, 1   side 1  ; enviar bit con BCLK alto
+    nop          side 0   ; bajar BCLK
+    jmp x-- bitloop

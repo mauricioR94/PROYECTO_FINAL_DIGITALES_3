@@ -28,35 +28,36 @@ set(PICO_BOARD pico CACHE STRING "Board type")
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
-project(Sonido C CXX ASM)
+project(Audio C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(Sonido Audio.c )
+add_executable(Audio Audio.c )
 
-pico_set_program_name(Sonido "Sonido")
-pico_set_program_version(Sonido "0.1")
+pico_set_program_name(Audio "Audio")
+pico_set_program_version(Audio "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(Sonido 0)
-pico_enable_stdio_usb(Sonido 1)
+pico_enable_stdio_uart(Audio 0)
+pico_enable_stdio_usb(Audio 1)
 
 # Add the standard library to the build
-target_link_libraries(Sonido
+target_link_libraries(Audio
         pico_stdlib
-        pico_audio_i2s
-        hardware_i2c
-        hardware_pio 
+        hardware_i2s
         hardware_dma
+        hardware_irq
+        hardware_clocks
+        hardware_pio
         )
 
 # Add the standard include files to the build
-target_include_directories(Sonido PRIVATE
+target_include_directories(Audio PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
-pico_add_extra_outputs(Sonido)
+pico_add_extra_outputs(Audio)
 
