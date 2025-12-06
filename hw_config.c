@@ -1,7 +1,7 @@
 #include "hw_config.h"
 #include <stdio.h>
 
-// Configuración del periférico SPI
+// Configuración del periférico SPI para la SD Card
 static spi_t spi = {
     .hw_inst = spi0,           // Usar SPI0
     .sck_gpio = 2,             // GPIO 2 = CLK
