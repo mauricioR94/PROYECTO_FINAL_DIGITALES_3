@@ -35,7 +35,6 @@ pico_sdk_init()
 # Añadir todos los archivos fuente del proyecto
 add_executable(LCD
     LCD.c
-    buttons.c
 )
 
 pico_set_program_name(LCD "LCD")
