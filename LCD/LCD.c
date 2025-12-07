@@ -86,9 +86,7 @@ boton_evento_t botones_get_evento() {
     return e;
 }
 
-// -----------------------
 // LCD - bajo nivel I2C (compatible con PCF8574 & HD44780 4-bit ext)
-// -----------------------
 #define I2C_PORT i2c1
 #define SDA_PIN 18
 #define SCL_PIN 19
@@ -162,9 +160,7 @@ void lcd_init() {
     lcd_clear();
 }
 
-// ----------------------------------
 // UI / estado en LCD
-// ----------------------------------
 void lcd_mostrar_estado() {
     lcd_clear();
 
@@ -185,9 +181,7 @@ void lcd_mostrar_estado() {
     lcd_print(buf);
 }
 
-// -----------------------
 // SISTEMA (lógica principal)
-// -----------------------
 void sistema_init() {
     t_calibracion = to_ms_since_boot(get_absolute_time());
 }
@@ -239,9 +233,7 @@ void sistema_update() {
     }
 }
 
-// -----------------------
 // MAIN
-// -----------------------
 int main() {
     stdio_init_all();
 
