@@ -12,5 +12,6 @@ extern uint8_t instrumento_slot[2];
 
 void sistema_init();
 void sistema_update();
+void iniciar_calibracion(void);
 
 #endif

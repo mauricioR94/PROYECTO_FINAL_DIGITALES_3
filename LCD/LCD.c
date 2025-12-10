@@ -7,6 +7,11 @@
 #include "sistema.h"
 #include "instrumentos.h"
 
+// LCD pines
+#define I2C_PORT i2c1
+#define SDA_PIN 18
+#define SCL_PIN 19
+#define LCD_ADDR 0x27
 
 uint8_t slot_activo = SLOT_H;          // 0 = Horizontal, 1 = Vertical
 uint8_t instrumento_slot[2] = {0, 0};
@@ -14,7 +19,7 @@ bool sistema_activo = false;
 bool mostrar_alarma = false;
 
 static uint32_t t_calibracion;
-static const uint32_t intervalo_ms = 5 * 60 * 1000; // 5 min
+static const uint32_t intervalo_ms = 3 * 60 * 1000; // 3 min
 
 // BOTONES - implementación robusta con debounce por boton
 
@@ -56,7 +61,7 @@ static inline int pin_of_index(int i) {
 // Se coloca evento en ultimo_evento (se consume con botones_get_evento)
 void botones_update() {
     uint32_t now = to_ms_since_boot(get_absolute_time());
-    const uint32_t DEBOUNCE_MS = 180;
+    const uint32_t DEBOUNCE_MS = 80;
 
     // revisa cada botón
     for (int i = 0; i < 3; ++i) {
@@ -85,12 +90,6 @@ boton_evento_t botones_get_evento() {
     ultimo_evento = BTN_NONE;
     return e;
 }
-
-// LCD - bajo nivel I2C (compatible con PCF8574 & HD44780 4-bit ext)
-#define I2C_PORT i2c1
-#define SDA_PIN 18
-#define SCL_PIN 19
-#define LCD_ADDR 0x27
 
 static void lcd_send_raw(uint8_t data) {
     // envía un byte al PCF8574 (sin usar toggles complejos aquí)
@@ -188,20 +187,32 @@ void sistema_init() {
 
 void sistema_update() {
     boton_evento_t ev = botones_get_evento();
+    uint32_t now = to_ms_since_boot(get_absolute_time());  // SOLO AQUÍ
 
     switch (ev) {
         case BTN_SLOT_EVT:
-            slot_activo ^= 1;
-            lcd_mostrar_estado();
+            if (mostrar_alarma) {
+                mostrar_alarma = false;
+                t_calibracion = now;
+                iniciar_calibracion();
+                lcd_mostrar_estado();
+            } else {
+                slot_activo ^= 1;
+                lcd_mostrar_estado();
+            }
             break;
 
         case BTN_NEXT_EVT:
-            instrumento_slot[slot_activo] = (instrumento_slot[slot_activo] + 1) % TOTAL_INSTRUMENTOS;
+            instrumento_slot[slot_activo] =
+                (instrumento_slot[slot_activo] + 1) % TOTAL_INSTRUMENTOS;
             lcd_mostrar_estado();
             break;
 
         case BTN_PREV_EVT:
-            instrumento_slot[slot_activo] = (instrumento_slot[slot_activo] == 0) ? (TOTAL_INSTRUMENTOS - 1) : (instrumento_slot[slot_activo] - 1);
+            instrumento_slot[slot_activo] =
+                (instrumento_slot[slot_activo] == 0)
+                ? TOTAL_INSTRUMENTOS - 1
+                : instrumento_slot[slot_activo] - 1;
             lcd_mostrar_estado();
             break;
 
@@ -209,29 +220,28 @@ void sistema_update() {
             break;
     }
 
-    // Timer calibración (no bloqueante)
-    uint32_t now = to_ms_since_boot(get_absolute_time());
+    // Timer no bloqueante
     if (now - t_calibracion >= intervalo_ms) {
         mostrar_alarma = true;
-        // mostrar mensaje de calibración (sobrescribe la línea inferior)
         lcd_set_cursor(0, 1);
-        lcd_print("Calibrar IMU    ");
-        // NOTA: la alarma se reinicia cuando se presiona cualquier botón (ver abajo)
+        lcd_print("Calibrar sensores!   ");
     }
 
-    // Si hay alarma y se presiona cualquier botón -> reset timmer y quita alarma
-    // (leer los pines directamente rápido)
+    // Botón resetea alarma
     if (mostrar_alarma) {
         if (leer_pin(BTN_SLOT) || leer_pin(BTN_NEXT) || leer_pin(BTN_PREV)) {
             mostrar_alarma = false;
             t_calibracion = now;
             lcd_mostrar_estado();
-            // consumir evento para que no haga doble acción en la misma pulsación
-            // (ya que botones_update habrá generado un evento)
-            // nota: botones_get_evento() lo limpia cuando se llame en el loop principal
         }
     }
 }
+
+
+void iniciar_calibracion(void) {
+    // en el futuro: centrar IMU, reset offsets, etc.
+}
+
 
 // MAIN
 int main() {
