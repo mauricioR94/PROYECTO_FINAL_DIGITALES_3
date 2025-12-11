@@ -12,7 +12,7 @@
 
 
 
- La presente es un prototipo de instrumento portátil que genera y manipula sonidos y efectos en tiempo real a partir de gestos detectados por una IMU y entradas físicas.
+ El presente es un prototipo de instrumento portátil que reproduce sonidos y efectos en tiempo real a partir de gestos detectados por una IMU y entradas físicas.
 
 
 
@@ -27,20 +27,19 @@
 
 
 ## Descripción
-HANDino Motion Tool es un instrumento musical embebido diseñado para producir tonos, aplicar efectos y cambios del audio mediante el movimiento de la mano y la pulsación de botones. 
+HANDino Motion Tool es un instrumento musical embebido diseñado para reproducir samples mediante el movimiento de la mano y la pulsación de botones. 
 
 El sistema interpreta lecturas de acelerómetro y giroscopio de una IMU MPU6050, las procesa en un microcontrolador (RP2040 / Raspberry Pi Pico) y reproduce samples por un DAC I²S/amplificador. 
 
 Permite cargar las librerías de audio desde microSD, cambiar instrumentos y aplicar efectos de trémolo, mapeando movimientos a parámetros sonoros.
 
 ## Guía de uso
-- **Encendido**: el dispositivo arranca tocando uno de los botones, inicia la calibración IMU y carga librerías desde microSD.  
-- **Tocar**: pulsar botones para reproducir notas; mover el instrumento vertical u horizontal para cambiar entre  los dos instrumentos seleccionados, activar efectos de trémolo  
-- **Navegación UI**: El proyecto utiliza una pantalla LCD 16x2 con interfaz I2C como medio principal de visualización,  lusar los tres botones dedicados para listar y seleccionar instrumentos desde la LCD, 
- - El primer botón de la izquierda funciona para cambiar entre la configuración del instrumento que será reproducido por movimientos horizontales y el instrumento de los movimientos vertiales
- - El botón del medio servirá para cambiar al siguiente tipo de instrumento en la SD
- - Rl botón de la derecha será para el instrumento anterior.
-- **Calibración**: si aparece alerta de recalibración, ubicar el dispositivo en la posición deseada y pulsar tecla de calibración.  
+- **Encendido**: el dispositivo arranca encendiendo el interruptor, inicia la calibración IMU y carga bibliotecas desde microSD.  
+- **Tocar**: pulsar botones para reproducir notas; girar el instrumento en posición vertical u horizontal para cambiar entre  los dos instrumentos seleccionados, girar en paralelo continuamente para activar efectos de trémolo  
+- **Navegación UI**: El proyecto utiliza una pantalla LCD 16x2 con interfaz I2C como medio principal de visualización,  y usa tres botones dedicados para listar y seleccionar instrumentos desde la LCD, 
+ - El primer botón de la izquierda funciona para establecer el instrumento anterior en la lista. 
+ - El botón del medio servirá para alternar el slot de instrumento vertical u horizontal
+ - Rl botón de la derecha será para el instrumento siguiente.
 
 ## Objetivos
 
@@ -50,7 +49,7 @@ Permite cargar las librerías de audio desde microSD, cambiar instrumentos y apl
 
 - Diseñar un sistema de entrada basado en botones que permita ejecutar notas musicales.
 
-- Implementar una interfaz LCD básica de retroalimentación y control para navegación, calibraciones y estados del sistema.
+- Implementar una interfaz LCD básica de interfaz y control para navegación y estados del sistema.
 
 - Optimizar la arquitectura del firmware para garantizar estabilidad y asegurar el flujo continuo de audio.
 
@@ -58,10 +57,9 @@ Permite cargar las librerías de audio desde microSD, cambiar instrumentos y apl
 
 ## Características principales
 - Detección de gestos con la IMU MPU6050 (pitch / roll / yaw, magnitud de aceleración, velocidad angular).
-- Mapeo gestual configurable: cambio de instrumento, selección de octava y efectos de trémolo.
+- Mapeo gestual configurable: cambio de instrumento y efectos de trémolo.
 - Reproducción de samples desde microSD vía I²S con DMA.
 - Interfaz física: pantalla LCD (I²C) + botones para navegación y selección.
-- Calibración de IMU con alertas y rutina de recalibrado.
 - Modo de bajo consumo tras 10 minutos inactivo; reactivación rápida por botón.
 - Gestión de librerías (listado / carga / selección de hasta 10 instrumentos predefinidos).
 
@@ -83,8 +81,6 @@ A partir de estas lecturas se pueden derivar:
 - Pitch, roll y yaw, mediante relaciones trigonométricas.
 
 - Eventos bruscos, útiles para activar efectos de trémolo.
-
-- Drift del giroscopio, que requiere calibración inicial y compensación.
 
 
 #### **Audio digital e interfaz I2S**
@@ -142,7 +138,7 @@ Los samples deben leerse desde la SD en bloques, por lo que se requiere un pre-b
 - Un sistema embebido simple como la Raspberry Pi Pico puede manejar simultáneamente lectura de IMU, manejo de botones, lectura de microSD y transmisión I2S siempre que se priorice correctamente la tarea de audio.
 - La arquitectura basada en PIO + DMA es suficiente para reproducir audio sin cortes ni artefactos sonoros, incluso cuando el sistema está leyendo archivos desde la SD.
 - La integración de buses distintos (I2C, SPI, I2S) confirma que la Pico soporta varios periféricos concurrentes sin congestión perceptible cuando el firmware está ordenado y modular.
-- La importancia de filtrar y estabilizar sensores antes de usarlos para interacción musical
+- Es importante filtrar y estabilizar sensores antes de usarlos para interacción musical
 
 - El dispositivo es completamente viable como producto reproducible.  
   La electrónica es estándar: IMU barata, DAC I2S común, lector SD y pi pico
@@ -150,8 +146,8 @@ Los samples deben leerse desde la SD en bloques, por lo que se requiere un pre-b
   - Crear un PCB dedicado que unifique SD, IMU, botones y DAC.
   - Integrar un amplificador de audio mejor, dependiendo del volumen deseado.
   - Diseñar una carcasa ergonómica impresa en 3D
-  - Usar una IMU de mayor precisión como BNO055 si se pretende un producto más preciso
 - La modularidad del firmware permite añadir nuevos instrumentos o efectos sin tocar el hardware, lo cual reduce costos si el proyecto se escalara a cientos o miles de unidades.
-- Desde el punto de vista industrial, la mayor limitación sería la alimentación: requeriría una batería LiPo más segura e integrada con protección y carga USB-C.
+- Desde el punto de vista industrial, la mayor limitación sería la alimentación: requeriría una batería LiPo segura e integrada con carga USB-C.
+
 
 
