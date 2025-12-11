@@ -1,0 +1,74 @@
+.program i2s_tx
+.side_set 2
+
+; side-set bit0 -> BCLK
+; side-set bit1 -> LRCK
+
+; Formato I2S estándar:
+; - 32 bits por frame (16 izquierda MSB primero, 16 derecha MSB primero)
+; - LRCK=0 -> canal izquierdo, LRCK=1 -> canal derecho
+; - Datos cambian en flanco de bajada de BCLK
+; - DAC lee datos en flanco de subida de BCLK
+
+.wrap_target
+    ; Canal izquierdo (16 bits)
+    set x, 14         side 0b01   ; LRCK=0, BCLK=1, contador para 15 bits más
+    out pins, 1       side 0b01   ; Sacar primer bit MSB con BCLK alto
+
+left_loop:
+    nop               side 0b00   ; BCLK bajo (flanco de bajada)
+    out pins, 1       side 0b01   ; BCLK alto, sacar siguiente bit
+    jmp x-- left_loop side 0b01   ; Repetir 15 veces más
+
+    ; Último ciclo del canal izquierdo
+    nop               side 0b00   ; BCLK bajo
+    
+    ; Canal derecho (16 bits)
+    set x, 14         side 0b11   ; LRCK=1, BCLK=1, contador para 15 bits más  
+    out pins, 1       side 0b11   ; Sacar primer bit MSB con BCLK alto
+
+right_loop:
+    nop               side 0b10   ; BCLK bajo (flanco de bajada), LRCK alto
+    out pins, 1       side 0b11   ; BCLK alto, sacar siguiente bit
+    jmp x-- right_loop side 0b11  ; Repetir 15 veces más
+    
+    ; Último ciclo del canal derecho
+    nop               side 0b10   ; BCLK bajo
+.wrap
+
+% c-sdk {
+static inline void i2s_tx_program_init(PIO pio, uint sm, uint offset,
+                                       uint data_pin, uint bclk_pin) {
+    pio_sm_config c = i2s_tx_program_get_default_config(offset);
+
+    // Un pin de datos (DIN)
+    sm_config_set_out_pins(&c, data_pin, 1);
+
+    // Dos pines consecutivos para side-set: BCLK (base) y LRCK (base+1)
+    sm_config_set_sideset_pins(&c, bclk_pin);
+
+    // Shift a la izquierda (MSB primero), autopull cada 32 bits
+    sm_config_set_out_shift(&c, false, true, 32);  // false = MSB primero
+
+    // FIFO join para TX (más buffer)
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
+
+    // Inicializar GPIOs
+    pio_gpio_init(pio, data_pin);
+    pio_gpio_init(pio, bclk_pin);
+    pio_gpio_init(pio, bclk_pin + 1);  // LRCK
+
+    // Todos como outputs
+    uint32_t pin_mask = (1u << data_pin)
+                      | (1u << bclk_pin)
+                      | (1u << (bclk_pin + 1));
+
+    pio_sm_set_pindirs_with_mask(pio, sm, pin_mask, pin_mask);
+    
+    // Poner todos los pines en estado inicial bajo
+    pio_sm_set_pins_with_mask(pio, sm, 0, pin_mask);
+
+    // Inicializar la state machine
+    pio_sm_init(pio, sm, offset, &c);
+}
+%}
